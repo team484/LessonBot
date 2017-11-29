@@ -1,10 +1,13 @@
 package org.usfirst.frc.team484.robot;
 
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Joystick.AxisType;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.RobotDrive;
-import edu.wpi.first.wpilibj.TalonSRX;
+import edu.wpi.first.wpilibj.Talon;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -16,63 +19,83 @@ import edu.wpi.first.wpilibj.TalonSRX;
 public class Robot extends IterativeRobot {
 	
 	public static final int DRIVE_STICK_PORT = 1;
+	public static final int RIGHT_MOTOR = 1;
+	public static final int LEFT_MOTOR = 0;
+	public static final int LEFT_ENCODER_A = 1;
+	public static final int LEFT_ENCODER_B = 0;
 	
-	// 0 -> climber
+	// The value that determines how many "pulses", the unit the encoder
+	// returns, constitute some other unit (in this case, feet)
+	public static final double ENCODER_DISTANCE_PER_PULSE = 12.0*(1.0/150.0);
 	
-	private Joystick driveStick;
-	private RobotDrive drive;
-	private TalonSRX rightMotor, leftMotor;
-	/**
-	 * This function is run when the robot is first started up and should be
-	 * used for any initialization code.
-	 */
+	Joystick driveStick;
+	RobotDrive drive;
+	
+	Talon rightMotor, leftMotor;
+	Encoder encoder;
+	
+	PIDController pid;
+	
 	@Override
 	public void robotInit() {
-		rightMotor = new TalonSRX(1);
-		leftMotor = new TalonSRX(0);
-		
+		rightMotor = new Talon(RIGHT_MOTOR);
+		leftMotor = new Talon(LEFT_MOTOR);	
 		driveStick = new Joystick(DRIVE_STICK_PORT);
 		
+		encoder = new Encoder(LEFT_ENCODER_A, LEFT_ENCODER_B);
+		encoder.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
+		
 		drive = new RobotDrive(rightMotor, leftMotor);
+		
+		pid = new PIDController(0.05, 0.0, 0.5, encoder, new PIDOutput() {
+			
+			@Override
+			public void pidWrite(double output) {
+				System.out.println("Output: " + output);
+				drive.arcadeDrive(-output, 0.141);
+			}
+		});
+		
+		pid.setOutputRange(-0.6, 0.6);
+	}
+	
+	private void pidEnable() {
+		// Zero the encoder...
+		encoder.reset();
+		
+		// Start the PID loop
+		pid.setSetpoint(120.0);
+		pid.enable();
 	}
 
-	/**
-	 * This autonomous (along with the chooser code above) shows how to select
-	 * between different autonomous modes using the dashboard. The sendable
-	 * chooser code works with the Java SmartDashboard. If you prefer the
-	 * LabVIEW Dashboard, remove all of the chooser code and uncomment the
-	 * getString line to get the auto name from the text box below the Gyro
-	 *
-	 * You can add additional auto modes by adding additional comparisons to the
-	 * switch structure below with additional strings. If using the
-	 * SendableChooser make sure to add them to the chooser code above as well.
-	 */
 	@Override
 	public void autonomousInit() {
+		pidEnable();
 	}
 
-	/**
-	 * This function is called periodically during autonomous
-	 */
 	@Override
 	public void autonomousPeriodic() {
+		SmartDashboard.putNumber("Encoder Distance", encoder.getDistance());
+		System.out.println("Encoder Distance: " + encoder.getDistance());
+		System.out.println("Encoder Raw: " + encoder.getRaw());
+	}
+	
+	@Override
+	public void teleopInit() {
+		pid.disable();
 	}
 
-	/**
-	 * This function is called periodically during operator control
-	 */
 	@Override
 	public void teleopPeriodic() {
-		double move = driveStick.getAxis(AxisType.kY);
+		SmartDashboard.putNumber("Encoder Distance", encoder.getDistance());
+		double move = driveStick.getY();
 		double rotate = -driveStick.getTwist();
 		drive.arcadeDrive(0.7 * move, 0.7 * rotate);
 	}
 
-	/**
-	 * This function is called periodically during test mode
-	 */
 	@Override
-	public void testPeriodic() {
+	public void disabledInit() {
+		pid.disable();
 	}
 }
 
