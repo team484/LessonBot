@@ -35,20 +35,21 @@ public class Robot extends IterativeRobot {
 		
 		Encoder leftEncoder = new Encoder(LEFT_ENCODER_A, LEFT_ENCODER_B);
 		Encoder rightEncoder = new Encoder(RIGHT_ENCODER_A, RIGHT_ENCODER_B);
-		leftEncoder.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
-		rightEncoder.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
-		
+
 		RobotDrive rawDrive = new RobotDrive(leftMotor, rightMotor);
 		drive = new Drive(rawDrive, topGyro, bottomGyro, rightEncoder, leftEncoder);
+		drive.setDistancePerPulse(ENCODER_DISTANCE_PER_PULSE);
 	}
-
+	
 	@Override
 	public void autonomousInit() {
 		drive.enable();
 	}
 
 	@Override
-	public void autonomousPeriodic() {}
+	public void autonomousPeriodic() {
+		drive.update();
+	}
 	
 	@Override
 	public void teleopInit() {
@@ -65,6 +66,10 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void disabledInit() {
 		drive.disable();
+	}
+	
+	@Override
+	public void disabledPeriodic() {
 	}
 }
 

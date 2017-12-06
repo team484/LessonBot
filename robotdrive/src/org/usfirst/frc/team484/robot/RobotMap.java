@@ -15,5 +15,5 @@ public final class RobotMap {
 	
 	// The value that determines how many "pulses", the unit the encoder
 	// returns, constitute some other unit (in this case, feet)
-	public static final double ENCODER_DISTANCE_PER_PULSE = 12.0*(1.0/120.0);
+	public static final double ENCODER_DISTANCE_PER_PULSE = 12.0*(1.0/180.0);
 }
